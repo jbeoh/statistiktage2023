@@ -1,0 +1,53 @@
+.title-slide {
+  background-color:#FFFFFF;
+  color: #000000;
+  background-image: url("images/logo_kt_fb.png");
+  background-position: 95% 1.5%; 
+  background-size: 128px;
+  
+}
+
+.remark-slide-content {
+    font-size: 30px;
+    padding: 1em 4em 1em 4em;
+}
+
+.remark-code, .remark-inline-code {
+  font-size: 16px;
+}
+
+.scroll-output {
+  height: 80%;
+  overflow-y: scroll;
+} 
+
+.remark-slide-scaler {
+    overflow-y: auto;
+}
+
+.remark-slide-number {
+    display: none;
+}
+
+.scroll-box-18 {
+  height:18em;
+  overflow-y: scroll;
+}
+
+.pull-left {
+  float: left;
+  width: 49%;
+}
+.pull-right {
+  float: right;
+  width: 49%;
+}
+
+.stylered {
+  color: red;
+}
+
+.stylegreen {
+  color: rgb(20,200,0);
+}
+
