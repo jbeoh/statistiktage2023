@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Publishing Interactive Web-Charts with Plotly and R</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Johannes Besch, Fachstelle Statistik Kanton Zug" />
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/header-attrs-2.24/header-attrs.js"></script>
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/xaringanExtra_fit-screen-0.2.6/fit-screen.js"></script>
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/xaringanExtra-progressBar-0.0.1/progress-bar.js"></script>
+    <link href="Statistiktage-Plotly-R-Besch-Online_files/panelset-0.2.6/panelset.css" rel="stylesheet" />
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/panelset-0.2.6/panelset.js"></script>
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/htmlwidgets-1.6.2/htmlwidgets.js"></script>
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/plotly-binding-4.10.2/plotly.js"></script>
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/typedarray-0.1/typedarray.min.js"></script>
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/jquery-3.5.1/jquery.min.js"></script>
+    <link href="Statistiktage-Plotly-R-Besch-Online_files/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet" />
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+    <link href="Statistiktage-Plotly-R-Besch-Online_files/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet" />
+    <script src="Statistiktage-Plotly-R-Besch-Online_files/plotly-main-2.11.1/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
+    <link rel="stylesheet" href="css/animate.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Publishing Interactive Web-Charts with Plotly and R
+]
+.author[
+### Johannes Besch, Fachstelle Statistik Kanton Zug
+]
+.date[
+### 01.09.2023
+]
+
+---
+
+
+<div>
+<style type="text/css">.xaringan-extra-logo {
+width: 110px;
+height: 128px;
+z-index: 0;
+background-image: url(./images/logo_kt_fb.png);
+background-size: contain;
+background-repeat: no-repeat;
+position: absolute;
+top:1em;right:1em;
+}
+</style>
+<script>(function () {
+  let tries = 0
+  function addLogo () {
+    if (typeof slideshow === 'undefined') {
+      tries += 1
+      if (tries < 10) {
+        setTimeout(addLogo, 100)
+      }
+    } else {
+      document.querySelectorAll('.remark-slide-content:not(.title-slide):not(.inverse):not(.hide_logo)')
+        .forEach(function (slide) {
+          const logo = document.createElement('div')
+          logo.classList = 'xaringan-extra-logo'
+          logo.href = null
+          slide.appendChild(logo)
+        })
+    }
+  }
+  document.addEventListener('DOMContentLoaded', addLogo)
+})()</script>
+</div><style>.xe__progress-bar__container {
+  top:0;
+  opacity: 1;
+  position:absolute;
+  right:0;
+  left: 0;
+}
+.xe__progress-bar {
+  height: 0.25em;
+  background-color: #006FB5;
+  width: calc(var(--slide-current) / var(--slide-total) * 100%);
+}
+.remark-visible .xe__progress-bar {
+  animation: xe__progress-bar__wipe 200ms forwards;
+  animation-timing-function: cubic-bezier(.86,0,.07,1);
+}
+@keyframes xe__progress-bar__wipe {
+  0% { width: calc(var(--slide-previous) / var(--slide-total) * 100%); }
+  100% { width: calc(var(--slide-current) / var(--slide-total) * 100%); }
+}</style>
+
+# .center[Starting Point]
+- (Interactive) charts = standard product in statistics 
+
+???
+- Convey more information; users choose what is relevant
+--
+
+- .stylered[Different tools to process and visualise data] vs. .stylegreen[integrated framework]
+
+???
+
+- Traditionally production of web charts split into data processing part in statistical software and chart production in Javascript; requires mastering two tools and programming languages
+
+- Integrated framework with data processing and chart production in same software, in Zug R, and only rendering of chart with Javascript
+
+- Advantage mastering one programming language only; data pipeline process easier to track and understand; maintenance and knowledge transfer; inspect chart before uploading = error detection; faster rendering of chart
+
+--
+
+![](./images/esseential.svg)&lt;!-- --&gt;
+
+
+???
+
+- Proprietary software like highcharts takes the burden of the user to have a decent knowledge of Javascript, but you pay for it
+
+- Most Open source software has either limits what it can, or requires developing from scratch like the Javascript D3 library, that means time ressources for mastering D3, good documentation and knwoledge transfer need to be ensured if the maintainer leaves. 
+
+- Probably no issue for cantons like ZUrich with a lot of manpower, but is an issue for smaller cantons
+
+- I labelled the framework I am gonna present you customising from toolkit, because don't build a chart from scratch but from a prebuild toolkit, but one with a lot of options to customise. It is also an open source approach, so we don't pay for pur chart production tool
+
+
+---
+
+# .center[May I introduce Plotly?]
+- Open-Source chart library built on top of D3
+
+???
+- before I show you how our charts look on the web, and how to produce them within R, I will briefly introduce you to what Plotly is
+
+- open source chart lirbary built on top of D3, we can use it for free although there exists also premium instance where you would need to pay for
+
+- Essential geometries/chart types available (Line, Bar, Scatter, Sunburst/Pie, Violin/Box Plot, Treemaps, Maps)
+
+- Charts can be combined (subplots, or different shapes in same plot)
+
+- Comes with default interactivity features
+--
+
+- Available in different programming languages
+
+???
+- Huge advantage is its good implementation in R, which doesn't exist for the most open source javascript charting libnrarires. 
+- Plotly is really made for being programmed with different languages, you can use it with Python, R, Javascript, Matlab or Julia. It also allows collaboration of users that have knowledge of different programming languages
+--
+
+- Can be used in web-publishing frameworks (e.g. Dash/Shiny)
+
+???
+- We can make use of Plotly charts in other facilitating web publishing frameworks like Dash or Shiny that essentially translate Python or R Code to ship around the use of Javascript in web pucliation. 
+--
+
+- Can be used in other publications
+
+???
+- integration in reports or presentation in formats that support interactivity
+- can be a huge upgrade compared to standard static charts in word or pdf
+--
+
+- Can translate most 'R ggplots' into Plotly objects
+
+???
+- Particularly interesting for R-enthusiasts
+
+---
+# .center[Website Statistics Zug]
+
+&lt;a href="https://www.zg.ch/behoerden/gesundheitsdirektion/statistikfachstelle/themen/soziale-sicherheit/sozialversicherungen"&gt;Examples Web Charts Statistics Zug&lt;/a&gt;
+
+???
+
+now I'm gonna show you how our charts look like on our webpage to illustrate some of Plotl'ys features.
+
+- automatic resizing
+
+- hover
+
+- clickable legend for data selection
+
+- dropdown buttons to filter data or restyle a chart
+
+- excel download button point to an excel file with the data of a chart
+
+- camera button for screenshots
+
+- info button how to interact wiht the chart
+
+
+---
+# .center[An R-oriented framework for producing web charts]
+
+&lt;img src="./images/chartproduction.svg" width="100%" height="80%" /&gt;
+
+
+
+???
+- So now it comes to show you how our framework looks like in detail and then to show you some code.
+
+- As said, our motto is as much R as possible, as little Javascript as necessary, 
+
+- So we want our data processing and chart production to be done in R, then we want Plotly's Javascript instance only to render the chart that we have produced in R and stored as a JSON file. 
+
+- This is what you see in this sketch of our chart production. We load data from the BFS database directly into R, or load data from our internal web server and process it inR, then we specify and customise the chart with Plotly in R, store it as a JSON file and upload it to a path on the server where our IT hosts the content management of the system. THere, we have stored also a Javascript instance of Plotly.
+
+- Then we need to specify within our content management system an HTML-container in which the chart will be rendered. 
+
+- The only Javascript we then need is to load the JSON file that holds the chart in that particular div, and the client's web browser will then render that chart.
+
+
+
+
+
+---
+
+.panelset[
+.panel[.panel-name[Plot Example I]
+
+<div id="htmlwidget-163ea35c406b4482ef64" style="width:750px;height:480px;" class="plotly html-widget "></div>
+<script type="application/json" data-for="htmlwidget-163ea35c406b4482ef64">{"x":{"visdat":{"54a443e24d10":["function () ","plotlyVisDat"]},"cur_data":"54a443e24d10","attrs":{"54a443e24d10":{"x":{},"y":{},"customdata":{},"hovertemplate":"%{customdata}<extra><\/extra>","colors":"#006FB5","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"bar"}},"layout":{"width":750,"height":480,"margin":{"b":120,"l":10,"t":50,"r":10,"pad":5},"title":"Population Swiss Cantons, 2021","xaxis":{"domain":[0,1],"automargin":true,"categoryorder":"total descending","title":"Canton","type":"category","categoryarray":["AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH"]},"yaxis":{"domain":[0,1],"automargin":true,"title":"","tickformat":",.0f"},"bargap":0.5,"showlegend":false,"annotations":[{"text":"Source: BFS STATPOP","showarrow":false,"x":0.14999999999999999,"y":-0.25,"xanchor":"right","yanchor":"auto","xref":"paper","yref":"paper","xshift":0,"yshift":0}],"hovermode":"closest"},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false,"displayModeBar":false},"data":[{"x":["ZH","BE","LU","UR","SZ","OW","NW","GL","ZG","FR","SO","BS","BL","SH","AR","AI","SG","GR","AG","TG","TI","VD","VS","NE","GE","JU"],"y":[1564662,1047473,420326,37047,163689,38435,43894,41190,129787,329809,280245,196036,292817,83995,55585,16360,519245,201376,703086,285964,352181,822968,353209,176166,509448,73798],"customdata":["Canton: Zürich<br>Population: 1,564,662","Canton: Bern <br>Population: 1,047,473","Canton: Luzern<br>Population:   420,326","Canton: Uri<br>Population:    37,047","Canton: Schwyz<br>Population:   163,689","Canton: Obwalden<br>Population:    38,435","Canton: Nidwalden<br>Population:    43,894","Canton: Glarus<br>Population:    41,190","Canton: Zug<br>Population:   129,787","Canton: Fribourg <br>Population:   329,809","Canton: Solothurn<br>Population:   280,245","Canton: Basel-Stadt<br>Population:   196,036","Canton: Basel-Landschaft<br>Population:   292,817","Canton: Schaffhausen<br>Population:    83,995","Canton: Appenzell Ausserrhoden<br>Population:    55,585","Canton: Appenzell Innerrhoden<br>Population:    16,360","Canton: St. Gallen<br>Population:   519,245","Canton: Graubünden <br>Population:   201,376","Canton: Aargau<br>Population:   703,086","Canton: Thurgau<br>Population:   285,964","Canton: Ticino<br>Population:   352,181","Canton: Vaud<br>Population:   822,968","Canton: Valais <br>Population:   353,209","Canton: Neuchâtel<br>Population:   176,166","Canton: Genève<br>Population:   509,448","Canton: Jura<br>Population:    73,798"],"hovertemplate":["%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>"],"type":"bar","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+]
+.panel[.panel-name[Code Example I]
+
+
+
+```r
+plot_ly(
+* data = daten1,
+* x = ~ Canton,
+* y = ~ Population,
+* colors = "#006FB5",
+* type = "bar",
+* height = 480,
+* width = 750,
+* customdata = ~ hover,
+* hovertemplate = "%{customdata}&lt;extra&gt;&lt;/extra&gt;"
+) %&gt;%
+  layout(
+    title = "Population Swiss Cantons, 2021",
+    xaxis = list(categoryorder = "total descending"),
+    yaxis = list(title = "", tickformat = ",.0f"),
+    bargap = 0.5,
+    #autosize = FALSE,
+    showlegend = FALSE,
+    annotations = list(
+      text = "Source: BFS STATPOP",
+      showarrow = FALSE,
+      x = 0.15,
+      y = -0.25,
+      xanchor = "right",
+      yanchor = "auto",
+      xref = "paper",
+      yref = "paper",
+      xshift = 0,
+      yshift = 0
+    ),
+    margin = list(
+      l = 10,
+      r = 10,
+      t = 50,
+      b = 120,
+      pad = 5
+    )
+  ) %&gt;%
+  config(displayModeBar = F)
+```
+]
+]
+
+???
+
+- Now I will briefly show you how easily you can make a Plotly chart with some interacctivity features. 
+
+- So the first is a simple bar chart with plotting the population count of the Swiss cantons
+
+- We have a hover with information we have specified, and we can also interactively select data. 
+
+- Maybe I'm interested to compare the population count of Zug only with cantons that have a similar population. We can go into the chart, hold the mouse and then select the data we are interested in and the chart gets resized to that area, so also the y-axis is now changed with new limits. WIth a double click we can switch back to the initial plot
+
+
+---
+.panelset[
+.panel[.panel-name[Plot Example Ia]
+![](Statistiktage-Plotly-R-Besch-Online_files/figure-html/plotlychartggplot-1.png)&lt;!-- --&gt;<div id="htmlwidget-72e084be8cf17598f809" style="width:600px;height:300px;" class="plotly html-widget "></div>
+<script type="application/json" data-for="htmlwidget-72e084be8cf17598f809">{"x":{"data":[{"orientation":"v","width":[0.66000000000000014,0.66000000000000014,0.66000000000000014,0.65999999999999659,0.65999999999999659,0.65999999999999659,0.65999999999999659,0.65999999999999659,0.65999999999999659,0.66000000000000014,0.66000000000000014,0.66000000000000014,0.66000000000000014,0.65999999999999659,0.65999999999999659,0.65999999999999659,0.66000000000000014,0.66000000000000014,0.66000000000000014,0.66000000000000014,0.66000000000000014,0.66000000000000014,0.66000000000000014,0.65999999999999837,0.66000000000000014,0.65999999999999659],"base":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"x":[1,2,7,25,17,24,22,23,18,10,13,15,11,19,21,26,5,14,4,12,9,3,8,16,6,20],"y":[1564662,1047473,420326,37047,163689,38435,43894,41190,129787,329809,280245,196036,292817,83995,55585,16360,519245,201376,703086,285964,352181,822968,353209,176166,509448,73798],"text":["reorder(Canton, -Population): ZH<br />Population: 1564662","reorder(Canton, -Population): BE<br />Population: 1047473","reorder(Canton, -Population): LU<br />Population:  420326","reorder(Canton, -Population): UR<br />Population:   37047","reorder(Canton, -Population): SZ<br />Population:  163689","reorder(Canton, -Population): OW<br />Population:   38435","reorder(Canton, -Population): NW<br />Population:   43894","reorder(Canton, -Population): GL<br />Population:   41190","reorder(Canton, -Population): ZG<br />Population:  129787","reorder(Canton, -Population): FR<br />Population:  329809","reorder(Canton, -Population): SO<br />Population:  280245","reorder(Canton, -Population): BS<br />Population:  196036","reorder(Canton, -Population): BL<br />Population:  292817","reorder(Canton, -Population): SH<br />Population:   83995","reorder(Canton, -Population): AR<br />Population:   55585","reorder(Canton, -Population): AI<br />Population:   16360","reorder(Canton, -Population): SG<br />Population:  519245","reorder(Canton, -Population): GR<br />Population:  201376","reorder(Canton, -Population): AG<br />Population:  703086","reorder(Canton, -Population): TG<br />Population:  285964","reorder(Canton, -Population): TI<br />Population:  352181","reorder(Canton, -Population): VD<br />Population:  822968","reorder(Canton, -Population): VS<br />Population:  353209","reorder(Canton, -Population): NE<br />Population:  176166","reorder(Canton, -Population): GE<br />Population:  509448","reorder(Canton, -Population): JU<br />Population:   73798"],"type":"bar","textposition":"none","marker":{"autocolorscale":false,"color":"rgba(0,111,181,1)","line":{"width":1.8897637795275593,"color":"transparent"}},"showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":48.146118721461193,"r":7.3059360730593621,"b":44.56621004566211,"l":63.561643835616451},"plot_bgcolor":"rgba(255,255,255,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724},"title":{"text":"Population, Swiss Cantons, 2021","font":{"color":"rgba(0,0,0,1)","family":"","size":17.534246575342465},"x":0,"xref":"paper"},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[0.40000000000000002,26.600000000000001],"tickmode":"array","ticktext":["ZH","BE","VD","AG","SG","GE","LU","VS","TI","FR","BL","TG","SO","GR","BS","NE","SZ","ZG","SH","JU","AR","NW","GL","OW","UR","AI"],"tickvals":[1,2,3,3.9999999999999996,5,6,7,7.9999999999999991,9,10,11,12,13,14.000000000000002,15,15.999999999999998,17,18,19,20,21,22,23,24,25,26],"categoryorder":"array","categoryarray":["ZH","BE","VD","AG","SG","GE","LU","VS","TI","FR","BL","TG","SO","GR","BS","NE","SZ","ZG","SH","JU","AR","NW","GL","OW","UR","AI"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.6529680365296811,"tickwidth":0.66417600664176002,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.68949771689498},"tickangle":-0,"showline":true,"linecolor":"rgba(0,0,0,1)","linewidth":0.66417600664176002,"showgrid":false,"gridcolor":null,"gridwidth":0,"zeroline":false,"anchor":"y","title":{"text":"Canton","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-78233.100000000006,1642895.1000000001],"tickmode":"array","ticktext":["0","500,000","1,000,000","1,500,000"],"tickvals":[0,500000,1000000.0000000001,1500000],"categoryorder":"array","categoryarray":["0","500,000","1,000,000","1,500,000"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.6529680365296811,"tickwidth":0.66417600664176002,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.68949771689498},"tickangle":-0,"showline":true,"linecolor":"rgba(0,0,0,1)","linewidth":0.66417600664176002,"showgrid":false,"gridcolor":null,"gridwidth":0,"zeroline":false,"anchor":"x","title":{"text":"","font":{"color":"rgba(0,0,0,1)","family":"","size":14.611872146118724}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":1.8897637795275593,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.68949771689498}},"hovermode":"closest","width":600,"height":300,"barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false,"displayModeBar":false},"source":"A","attrs":{"54a468436150":{"x":{},"y":{},"type":"bar"}},"cur_data":"54a468436150","visdat":{"54a468436150":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+]
+.panel[.panel-name[Plot Example Ia]
+
+```r
+chart &lt;- ggplot(data = daten1,
+                aes(x = reorder(Canton, -Population),
+                    y = Population)) +
+  geom_bar(stat = "identity",
+           fill = "#006FB5",
+           width = .66) +
+  theme_classic() +
+  labs(
+    x = "Canton",
+    y = "",
+    title = "Population, Swiss Cantons, 2021",
+    caption = "Source: BFS STATPOP"
+  ) +
+  scale_y_continuous(labels = scales::comma)
+
+chart
+
+*ggplotly(chart,width=600,height=300) %&gt;%
+  config(displayModeBar = FALSE)
+
+chart2 &lt;- plotly::ggplotly(chart) %&gt;% plotly::plotly_build()
+```
+]
+]
+???
+- now you see the exact same chart, but the chart on top is a static ggplot
+
+- the below chart is a plotly plot that has translated the static R ggplot into an interactive plotly chart
+
+- as you can see, the syntax is very easy, you simply make a ggplotly call to translate the ggplot into a plotly object
+
+- However, you can see on the hover information that you would need to customise that to make it a publishable chart.
+
+- You cannot translate all ggplots into plotly objects, but many
+
+---
+.panelset[
+.panel[.panel-name[Plot Example II]
+<div id="htmlwidget-da2950ebaf6dcf39bcf3" style="width:700px;height:550px;" class="plotly html-widget "></div>
+<script type="application/json" data-for="htmlwidget-da2950ebaf6dcf39bcf3">{"x":{"visdat":{"54a44fb57391":["function () ","plotlyVisDat"]},"cur_data":"54a44fb57391","attrs":{"54a44fb57391":{"x":{},"y":{},"color":{},"colors":["#4B0082","#BF000A","#FFA500","#006FB5","#808080","#fde725"],"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"bar"}},"layout":{"width":700,"height":550,"margin":{"b":120,"l":10,"t":50,"r":10,"pad":5},"title":"Factors of Population Growth, Canton Zug 2000-2021","yaxis":{"domain":[0,1],"automargin":true,"title":"","tickformat":",.0f"},"legend":{"orientation":"h"},"barmode":"relative","bargap":0.5,"autosize":false,"annotations":[{"text":"Source: BFS STATPOP","showarrow":false,"x":0.14999999999999999,"y":-0.40000000000000002,"xanchor":"right","yanchor":"auto","xref":"paper","yref":"paper","xshift":0,"yshift":0}],"xaxis":{"domain":[0,1],"automargin":true,"title":"Year"},"hovermode":"closest","showlegend":true},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false,"displayModeBar":false},"data":[{"x":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021],"y":[1217,1105,1065,1157,1102,1143,1154,1145,1164,1166,1165,1200,1201,1258,1284,1295,1377,1257,1343,1329,1245,1371],"type":"bar","name":"Birth","marker":{"color":"rgba(75,0,130,1)","line":{"color":"rgba(75,0,130,1)"}},"textfont":{"color":"rgba(75,0,130,1)"},"error_y":{"color":"rgba(75,0,130,1)"},"error_x":{"color":"rgba(75,0,130,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021],"y":[-700,-654,-672,-690,-660,-688,-626,-645,-666,-662,-706,-720,-742,-764,-742,-735,-746,-795,-814,-791,-868,-941],"type":"bar","name":"Death","marker":{"color":"rgba(191,0,10,1)","line":{"color":"rgba(191,0,10,1)"}},"textfont":{"color":"rgba(191,0,10,1)"},"error_y":{"color":"rgba(191,0,10,1)"},"error_x":{"color":"rgba(191,0,10,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021],"y":[-1326,-1193,-1107,-1155,-1237,-1253,-1369,-1494,-1404,-1510,-1560,-1619,-1756,-2002,-2223,-2162,-2170,-2123,-2165,-2252,-1837,-2102],"type":"bar","name":"Emigration","marker":{"color":"rgba(255,165,0,1)","line":{"color":"rgba(255,165,0,1)"}},"textfont":{"color":"rgba(255,165,0,1)"},"error_y":{"color":"rgba(255,165,0,1)"},"error_x":{"color":"rgba(255,165,0,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021],"y":[1904,2089,1894,1841,1913,1968,1990,3251,3291,2655,2888,3317,2948,3223,3166,3142,3186,2967,2967,2932,2750,3003],"type":"bar","name":"Immigration","marker":{"color":"rgba(0,111,181,1)","line":{"color":"rgba(0,111,181,1)"}},"textfont":{"color":"rgba(0,111,181,1)"},"error_y":{"color":"rgba(0,111,181,1)"},"error_x":{"color":"rgba(0,111,181,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021],"y":[2744,2579,2869,2595,3302,3026,2951,3013,2884,2862,3160,3314,3428,3310,3666,3891,3770,3622,3687,3446,3684,3564],"type":"bar","name":"Influx other cantons","marker":{"color":"rgba(128,128,128,1)","line":{"color":"rgba(128,128,128,1)"}},"textfont":{"color":"rgba(128,128,128,1)"},"error_y":{"color":"rgba(128,128,128,1)"},"error_x":{"color":"rgba(128,128,128,1)"},"xaxis":"x","yaxis":"y","frame":null},{"x":[2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021],"y":[-2288,-2498,-2575,-2479,-2733,-2878,-3103,-3346,-3917,-4002,-3527,-3551,-3477,-3363,-3199,-3457,-3672,-3531,-3639,-3873,-3849,-3940],"type":"bar","name":"Outflux other cantons","marker":{"color":"rgba(253,231,37,1)","line":{"color":"rgba(253,231,37,1)"}},"textfont":{"color":"rgba(253,231,37,1)"},"error_y":{"color":"rgba(253,231,37,1)"},"error_x":{"color":"rgba(253,231,37,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+]
+
+.panel[.panel-name[Code Example II]
+
+```r
+plot_ly(
+  data = daten2,
+  x = ~ Year,
+  y = ~ Value,
+* color = ~ Type,
+  colors = c(
+    "#4B0082",
+    "#BF000A",
+    "#FFA500",
+    "#006FB5",
+    "#808080",
+    "#fde725"
+  ),
+  type = "bar",
+  height = 550,
+  width = 700
+) %&gt;%
+  layout(
+    title = "Factors of Population Growth, Canton Zug 2000-2021",
+    yaxis = list(title = "", tickformat = ",.0f"),
+    legend = list(orientation="h"),
+    barmode = "relative",
+    bargap = 0.5,
+    autosize = FALSE,
+    annotations = list(
+      text = "Source: BFS STATPOP",
+      showarrow = FALSE,
+      x = 0.15,
+      y = -0.4,
+      xanchor = "right",
+      yanchor = "auto",
+      xref = "paper",
+      yref = "paper",
+      xshift = 0,
+      yshift = 0
+    ),
+    margin = list(
+      l = 10,
+      r = 10,
+      t = 50,
+      b = 120,
+      pad = 5
+    )
+  ) %&gt;%
+  config(displayModeBar = F)
+```
+]
+]
+
+???
+
+- so in this stacke bar chart plotting the drivers of population growth in Zug, we have the clickable legend again
+
+- we may want to inspect only the birth which is what we achieve with a double click. or maybe compare births and deaths, so we select now also deaths with a single click. And with a double click we come back to the initial chart.
+
+- As you can see from the code, I didn't need to specify anyhting to have this clickable legend.
+
+---
+.panelset[
+.panel[
+.panel-name[Plot Example III]
+<div id="htmlwidget-31546dda8ccbfcc7ec4e" style="width:700px;height:500px;" class="plotly html-widget "></div>
+<script type="application/json" data-for="htmlwidget-31546dda8ccbfcc7ec4e">{"x":{"visdat":{"54a4296e4647":["function () ","plotlyVisDat"],"54a468b32ff8":["function () ","data"]},"cur_data":"54a468b32ff8","attrs":{"54a4296e4647":{"y":{},"x":{},"customdata":{},"hovertemplate":"%{customdata}<extra><\/extra>","colors":"#006FB5","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"bar"},"54a468b32ff8":{"y":{},"x":{},"customdata":{},"hovertemplate":"%{customdata}<extra><\/extra>","colors":"#006FB5","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"bar","visible":false,"marker":{"color":"#006FB5"},"inherit":true}},"layout":{"width":700,"height":500,"margin":{"b":120,"l":10,"t":100,"r":10,"pad":5},"title":"Population Canton Zug and Municipalities, 2021","xaxis":{"domain":[0,1],"automargin":true,"title":"","tickformat":",.0f"},"yaxis":{"domain":[0,1],"automargin":true,"title":"","type":"category","categoryorder":"array","categoryarray":["Kanton Zug","Baar","Cham","Hünenberg","Menzingen","Neuheim","Oberägeri","Risch","Steinhausen","Unterägeri","Walchwil","Zug"]},"bargap":0.5,"autosize":false,"showlegend":false,"updatemenus":[{"x":1.05,"y":1.1499999999999999,"xanchor":"left","yanchor":"top","direction":"down","type":"dropdown","buttons":[{"method":"restyle","args":["visible",[true,false]],"label":"Gemeinden"},{"method":"restyle","args":["visible",[true,true]],"label":"Gemeinden & Kanton"}]}],"annotations":[{"text":"Source: BFS STATPOP","showarrow":false,"x":0.14999999999999999,"y":-0.25,"xanchor":"right","yanchor":"auto","xref":"paper","yref":"paper","xshift":0,"yshift":0}],"hovermode":"closest"},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false,"displayModeBar":false},"data":[{"y":["Baar","Cham","Hünenberg","Menzingen","Neuheim","Oberägeri","Risch","Steinhausen","Unterägeri","Walchwil","Zug"],"x":[24754,17076,8879,4597,2338,6476,11182,10237,9010,3893,31345],"customdata":["Municipality: Baar<br>Inhabitants:  24'754","Municipality: Cham<br>Inhabitants:  17'076","Municipality: Hünenberg<br>Inhabitants:   8'879","Municipality: Menzingen<br>Inhabitants:   4'597","Municipality: Neuheim<br>Inhabitants:   2'338","Municipality: Oberägeri<br>Inhabitants:   6'476","Municipality: Risch<br>Inhabitants:  11'182","Municipality: Steinhausen<br>Inhabitants:  10'237","Municipality: Unterägeri<br>Inhabitants:   9'010","Municipality: Walchwil<br>Inhabitants:   3'893","Municipality: Zug<br>Inhabitants:  31'345"],"hovertemplate":["%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>"],"type":"bar","orientation":"h","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null},{"y":["Kanton Zug"],"x":[129787],"customdata":["Municipality: Kanton Zug<br>Inhabitants: 129'787"],"hovertemplate":"%{customdata}<extra><\/extra>","type":"bar","visible":false,"marker":{"color":"#006FB5","line":{"color":"rgba(255,127,14,1)"}},"orientation":"h","error_y":{"color":"rgba(255,127,14,1)"},"error_x":{"color":"rgba(255,127,14,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+]
+.panel[
+.panel-name[Code Example III]
+
+
+```r
+plot_ly(
+  data = gemeinden,
+  y = ~ Gemeinde,
+  x = ~ Inhabitants,
+  colors = "#006FB5",
+  type = "bar",
+  customdata = ~ hover,
+  hovertemplate = "%{customdata}&lt;extra&gt;&lt;/extra&gt;",
+  width = 700, height = 500
+) %&gt;%
+  add_trace(
+    data = kanton,
+    type = "bar",
+    visible = FALSE,
+    marker = list(color = "#006FB5")
+  ) %&gt;%
+  layout(
+    title = "Population Canton Zug and Municipalities, 2021",
+    xaxis = list(title = "",
+                 tickformat = ",.0f"),
+    yaxis = list(title = ""),
+    bargap = 0.5,
+    autosize = FALSE,
+    showlegend = FALSE,
+*   updatemenus = list(
+*     list(
+*       x = 1.05,
+*       y = 1.15,
+*       xanchor = "left",
+*       yanchor = "top",
+*       direction = "down",
+*       type = "dropdown",
+*       buttons = list(
+*         list(
+*           method = "restyle",
+*           args = list("visible",
+*                       c(TRUE, FALSE)),
+*           label = "Gemeinden"
+*         ),
+*         list(
+*           method = "restyle",
+*           args = list("visible",
+*                       c(TRUE, TRUE)),
+*           label = "Gemeinden &amp; Kanton"
+          )
+        )
+      )
+    ),
+    annotations = list(
+      text = "Source: BFS STATPOP",
+      showarrow = FALSE,
+      x = 0.15,
+      y = -0.25,
+      xanchor = "right",
+      yanchor = "auto",
+      xref = "paper",
+      yref = "paper",
+      xshift = 0,
+      yshift = 0
+    ),
+    margin = list(
+      l = 10,
+      r = 10,
+      t = 100,
+      b = 120,
+      pad = 5
+    )
+  ) %&gt;%
+  config(displayModeBar = F)
+```
+]
+]
+???
+- Now we come to the dropdown events. This chart shows the population of Municipalities in Zug and the Canton. We have two buttons,
+one will make us show only the municipalties, and the other one is if we want to compare the canton with the municipalities. 
+
+- That involves a litlte bit more coding bit is still very simple if you compare it to how you would make that with html and javascript
+
+- THe highlighted code lines are responsible for this menu. Essentially, we specify a menu to update the chart and its location, and then what should happen when we select a particualr button, which is now that we make a particular data trace visible or not
+---
+.panelset[
+.panel[
+.panel-name[Plot Example IV]
+
+<div id="htmlwidget-35166cea4908d883691d" style="width:700px;height:500px;" class="plotly html-widget "></div>
+<script type="application/json" data-for="htmlwidget-35166cea4908d883691d">{"x":{"visdat":{"54a45cb71c6a":["function () ","plotlyVisDat"]},"cur_data":"54a45cb71c6a","attrs":{"54a45cb71c6a":{"x":{},"y":{},"mode":"lines","customdata":{},"hovertemplate":"%{customdata}<extra><\/extra>","colors":"#006FB5","alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"scatter"}},"layout":{"width":700,"height":500,"margin":{"b":120,"l":10,"t":100,"r":10,"pad":5},"title":"Population Canton Zug, 2000-2021","xaxis":{"domain":[0,1],"automargin":true,"title":"","rangeslider":{"type":"date"},"rangeselector":{"buttons":[{"count":10,"label":"Past 10 years","step":"year","stepmode":"backward"},{"count":6,"label":"Since 2015","step":"year","stepmode":"todate"},{"label":"All years","step":"all"}]}},"yaxis":{"domain":[0,1],"automargin":true,"title":"","tickformat":",.0f"},"autosize":false,"annotations":[{"text":"Source: BFS STATPOP","showarrow":false,"x":0.14999999999999999,"y":-0.25,"xanchor":"right","yanchor":"auto","xref":"paper","yref":"paper","xshift":0,"yshift":0}],"hovermode":"closest","showlegend":false},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false,"displayModeBar":false},"data":[{"x":["2000-01-02","2001-01-01","2002-01-01","2003-01-01","2004-01-02","2005-01-01","2006-01-01","2007-01-01","2008-01-02","2009-01-01","2010-01-01","2011-01-01","2012-01-02","2013-01-01","2014-01-01","2015-01-01","2016-01-02","2017-01-01","2018-01-01","2019-01-01","2020-01-02","2021-01-01"],"y":[99388,101022,102407,103642,105244,106496,107171,109141,110384,110890,112237,115104,116575,118118,120089,122134,123948,125421,126837,127642,128794,129787],"mode":"lines","customdata":["Year: 2000<br>Inhabitants:  99'388","Year: 2001<br>Inhabitants: 101'022","Year: 2002<br>Inhabitants: 102'407","Year: 2003<br>Inhabitants: 103'642","Year: 2004<br>Inhabitants: 105'244","Year: 2005<br>Inhabitants: 106'496","Year: 2006<br>Inhabitants: 107'171","Year: 2007<br>Inhabitants: 109'141","Year: 2008<br>Inhabitants: 110'384","Year: 2009<br>Inhabitants: 110'890","Year: 2010<br>Inhabitants: 112'237","Year: 2011<br>Inhabitants: 115'104","Year: 2012<br>Inhabitants: 116'575","Year: 2013<br>Inhabitants: 118'118","Year: 2014<br>Inhabitants: 120'089","Year: 2015<br>Inhabitants: 122'134","Year: 2016<br>Inhabitants: 123'948","Year: 2017<br>Inhabitants: 125'421","Year: 2018<br>Inhabitants: 126'837","Year: 2019<br>Inhabitants: 127'642","Year: 2020<br>Inhabitants: 128'794","Year: 2021<br>Inhabitants: 129'787"],"hovertemplate":["%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>","%{customdata}<extra><\/extra>"],"type":"scatter","marker":{"color":"rgba(31,119,180,1)","line":{"color":"rgba(31,119,180,1)"}},"error_y":{"color":"rgba(31,119,180,1)"},"error_x":{"color":"rgba(31,119,180,1)"},"line":{"color":"rgba(31,119,180,1)"},"xaxis":"x","yaxis":"y","frame":null}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+]
+.panel[
+.panel-name[Code Example IV]
+
+
+```r
+plot_ly(
+  data = daten4,
+  x = ~ Year,
+  y = ~ Population,
+  colors = "#006FB5",
+  type = "scatter",
+  mode = "lines",
+  customdata = ~ hover,
+  hovertemplate = "%{customdata}&lt;extra&gt;&lt;/extra&gt;",
+  height=500,
+  width=700
+) %&gt;%
+  layout(
+    title = "Population Canton Zug, 2000-2021",
+    xaxis = list(title = "",
+*                rangeslider = list(type = "date"),
+*                rangeselector = list(buttons=list(
+*                  list(count=10,
+*                       label="Past 10 years",
+*                       step="year",
+*                       stepmode="backward"),
+*                  list(count=round(
+*                    lubridate::time_length(
+*                      difftime(
+*                        as.Date(max(daten4$Year)),
+*                        as.Date("2015-01-01")),
+*                      "years"),
+*                    digits=0),
+*                       label="Since 2015",
+*                       step="year",
+*                       stepmode="todate"),
+*                  list(label="All years",
+*                       step="all")
+*                ))),
+    yaxis = list(title = "",
+                 tickformat = ",.0f"),
+    autosize = FALSE,
+    annotations = list(
+      text = "Source: BFS STATPOP",
+      showarrow = FALSE,
+      x = 0.15,
+      y = -0.25,
+      xanchor = "right",
+      yanchor = "auto",
+      xref = "paper",
+      yref = "paper",
+      xshift = 0,
+      yshift = 0
+    ),
+    margin = list(
+      l = 10,
+      r = 10,
+      t = 100,
+      b = 120,
+      pad = 5
+    )
+  ) %&gt;%
+  config(displayModeBar = F)
+```
+]
+]
+
+???
+- finally I show you how to implement a rangeslider and rangeselector
+
+- In this chart, we may be interested in a particular timeline and not the whole data series. 
+
+- Maybe I'm interested how the population has devevloped in the past 10 years, for that we can use thebutton on top.
+
+- Or maybe i'm interested in specific years, so how the population has developed from 2010 to 2015. For that, we can use the rangeslider below and select the data to the area we are interested in. 
+---
+
+.panelset[
+.panel[
+.panel-name[Store JSON]
+
+```r
+write_plotly &lt;- function(plot, pfad) {
+  schreibpfad &lt;- paste0(pfad, ".json")
+  base::writeLines(text = plotly:::to_JSON(plot),
+                   con = schreibpfad,
+                   useBytes = T)
+}
+
+write_plotly(chart2, paste0(getwd(), "./data/figures"))
+```
+]
+.panel[
+ .panel-name[JSON Structure R]
+
+```r
+str(chart2)
+```
+
+```
+## List of 8
+##  $ x            :List of 10
+##   ..$ data       :List of 1
+##   .. ..$ :List of 14
+##   .. .. ..$ orientation : chr "v"
+##   .. .. ..$ width       : 'mapped_discrete' num [1:26] 0.66 0.66 0.66 0.66 0.66 ...
+##   .. .. .. ..- attr(*, "apiSrc")= logi TRUE
+##   .. .. ..$ base        : num [1:26] 0 0 0 0 0 0 0 0 0 0 ...
+##   .. .. .. ..- attr(*, "apiSrc")= logi TRUE
+##   .. .. ..$ x           : 'mapped_discrete' num [1:26] 1 2 7 25 17 24 22 23 18 10 ...
+##   .. .. .. ..- attr(*, "apiSrc")= logi TRUE
+##   .. .. ..$ y           : num [1:26] 1564662 1047473 420326 37047 163689 ...
+##   .. .. .. ..- attr(*, "apiSrc")= logi TRUE
+##   .. .. ..$ text        : chr [1:26] "reorder(Canton, -Population): ZH&lt;br /&gt;Population: 1564662" "reorder(Canton, -Population): BE&lt;br /&gt;Population: 1047473" "reorder(Canton, -Population): LU&lt;br /&gt;Population:  420326" "reorder(Canton, -Population): UR&lt;br /&gt;Population:   37047" ...
+##   .. .. .. ..- attr(*, "apiSrc")= logi TRUE
+##   .. .. ..$ type        : chr "bar"
+##   .. .. ..$ textposition: chr "none"
+##   .. .. ..$ marker      :List of 3
+##   .. .. .. ..$ autocolorscale: logi FALSE
+##   .. .. .. ..$ color         : chr "rgba(0,111,181,1)"
+##   .. .. .. ..$ line          :List of 2
+##   .. .. .. .. ..$ width: num 1.89
+##   .. .. .. .. ..$ color: chr "transparent"
+##   .. .. ..$ showlegend  : logi FALSE
+##   .. .. ..$ xaxis       : chr "x"
+##   .. .. ..$ yaxis       : chr "y"
+##   .. .. ..$ hoverinfo   : chr "text"
+##   .. .. ..$ frame       : chr NA
+##   ..$ layout     :List of 12
+##   .. ..$ margin       :List of 4
+##   .. .. ..$ t: num 51.5
+##   .. .. ..$ r: num 7.31
+##   .. .. ..$ b: num 47.9
+##   .. .. ..$ l: num 63.6
+##   .. ..$ plot_bgcolor : chr "rgba(255,255,255,1)"
+##   .. ..$ paper_bgcolor: chr "rgba(255,255,255,1)"
+##   .. ..$ font         :List of 3
+##   .. .. ..$ color : chr "rgba(0,0,0,1)"
+##   .. .. ..$ family: chr ""
+##   .. .. ..$ size  : num 14.6
+##   .. ..$ title        :List of 4
+##   .. .. ..$ text: chr "Population, Swiss Cantons, 2021"
+##   .. .. ..$ font:List of 3
+##   .. .. .. ..$ color : chr "rgba(0,0,0,1)"
+##   .. .. .. ..$ family: chr ""
+##   .. .. .. ..$ size  : num 17.5
+##   .. .. ..$ x   : num 0
+##   .. .. ..$ xref: chr "paper"
+##   .. ..$ xaxis        :List of 28
+##   .. .. ..$ domain        : num [1:2] 0 1
+##   .. .. ..$ automargin    : logi TRUE
+##   .. .. ..$ type          : chr "linear"
+##   .. .. ..$ autorange     : logi FALSE
+##   .. .. ..$ range         : num [1:2] 0.4 26.6
+##   .. .. ..$ tickmode      : chr "array"
+##   .. .. ..$ ticktext      : chr [1:26] "ZH" "BE" "VD" "AG" ...
+##   .. .. ..$ tickvals      : 'mapped_discrete' num [1:26] 1 2 3 4 5 6 7 8 9 10 ...
+##   .. .. ..$ categoryorder : chr "array"
+##   .. .. ..$ categoryarray : chr [1:26] "ZH" "BE" "VD" "AG" ...
+##   .. .. ..$ nticks        : logi NA
+##   .. .. ..$ ticks         : chr "outside"
+##   .. .. ..$ tickcolor     : chr "rgba(51,51,51,1)"
+##   .. .. ..$ ticklen       : num 3.65
+##   .. .. ..$ tickwidth     : num 0.664
+##   .. .. ..$ showticklabels: logi TRUE
+##   .. .. ..$ tickfont      :List of 3
+##   .. .. .. ..$ color : chr "rgba(77,77,77,1)"
+##   .. .. .. ..$ family: chr ""
+##   .. .. .. ..$ size  : num 11.7
+##   .. .. ..$ tickangle     : num 0
+##   .. .. ..$ showline      : logi TRUE
+##   .. .. ..$ linecolor     : chr "rgba(0,0,0,1)"
+##   .. .. ..$ linewidth     : num 0.664
+##   .. .. ..$ showgrid      : logi FALSE
+##   .. .. ..$ gridcolor     : logi NA
+##   .. .. ..$ gridwidth     : num 0
+##   .. .. ..$ zeroline      : logi FALSE
+##   .. .. ..$ anchor        : chr "y"
+##   .. .. ..$ title         :List of 2
+##   .. .. .. ..$ text: chr "Canton"
+##   .. .. .. ..$ font:List of 3
+##   .. .. .. .. ..$ color : chr "rgba(0,0,0,1)"
+##   .. .. .. .. ..$ family: chr ""
+##   .. .. .. .. ..$ size  : num 14.6
+##   .. .. ..$ hoverformat   : chr ".2f"
+##   .. ..$ yaxis        :List of 28
+##   .. .. ..$ domain        : num [1:2] 0 1
+##   .. .. ..$ automargin    : logi TRUE
+##   .. .. ..$ type          : chr "linear"
+##   .. .. ..$ autorange     : logi FALSE
+##   .. .. ..$ range         : num [1:2] -78233 1642895
+##   .. .. ..$ tickmode      : chr "array"
+##   .. .. ..$ ticktext      : chr [1:4] "0" "500,000" "1,000,000" "1,500,000"
+##   .. .. ..$ tickvals      : num [1:4] 0 500000 1000000 1500000
+##   .. .. ..$ categoryorder : chr "array"
+##   .. .. ..$ categoryarray : chr [1:4] "0" "500,000" "1,000,000" "1,500,000"
+##   .. .. ..$ nticks        : logi NA
+##   .. .. ..$ ticks         : chr "outside"
+##   .. .. ..$ tickcolor     : chr "rgba(51,51,51,1)"
+##   .. .. ..$ ticklen       : num 3.65
+##   .. .. ..$ tickwidth     : num 0.664
+##   .. .. ..$ showticklabels: logi TRUE
+##   .. .. ..$ tickfont      :List of 3
+##   .. .. .. ..$ color : chr "rgba(77,77,77,1)"
+##   .. .. .. ..$ family: chr ""
+##   .. .. .. ..$ size  : num 11.7
+##   .. .. ..$ tickangle     : num 0
+##   .. .. ..$ showline      : logi TRUE
+##   .. .. ..$ linecolor     : chr "rgba(0,0,0,1)"
+##   .. .. ..$ linewidth     : num 0.664
+##   .. .. ..$ showgrid      : logi FALSE
+##   .. .. ..$ gridcolor     : logi NA
+##   .. .. ..$ gridwidth     : num 0
+##   .. .. ..$ zeroline      : logi FALSE
+##   .. .. ..$ anchor        : chr "x"
+##   .. .. ..$ title         :List of 2
+##   .. .. .. ..$ text: chr ""
+##   .. .. .. ..$ font:List of 3
+##   .. .. .. .. ..$ color : chr "rgba(0,0,0,1)"
+##   .. .. .. .. ..$ family: chr ""
+##   .. .. .. .. ..$ size  : num 14.6
+##   .. .. ..$ hoverformat   : chr ".2f"
+##   .. ..$ shapes       :List of 1
+##   .. .. ..$ :List of 9
+##   .. .. .. ..$ type     : chr "rect"
+##   .. .. .. ..$ fillcolor: logi NA
+##   .. .. .. ..$ line     :List of 3
+##   .. .. .. .. ..$ color   : logi NA
+##   .. .. .. .. ..$ width   : num 0
+##   .. .. .. .. ..$ linetype: chr(0) 
+##   .. .. .. ..$ yref     : chr "paper"
+##   .. .. .. ..$ xref     : chr "paper"
+##   .. .. .. ..$ x0       : num 0
+##   .. .. .. ..$ x1       : num 1
+##   .. .. .. ..$ y0       : num 0
+##   .. .. .. ..$ y1       : num 1
+##   .. ..$ showlegend   : logi FALSE
+##   .. ..$ legend       :List of 4
+##   .. .. ..$ bgcolor    : chr "rgba(255,255,255,1)"
+##   .. .. ..$ bordercolor: chr "transparent"
+##   .. .. ..$ borderwidth: num 1.89
+##   .. .. ..$ font       :List of 3
+##   .. .. .. ..$ color : chr "rgba(0,0,0,1)"
+##   .. .. .. ..$ family: chr ""
+##   .. .. .. ..$ size  : num 11.7
+##   .. ..$ hovermode    : chr "closest"
+##   .. ..$ barmode      : chr "relative"
+##   ..$ config     :List of 3
+##   .. ..$ doubleClick        : chr "reset"
+##   .. ..$ modeBarButtonsToAdd: chr [1:2] "hoverclosest" "hovercompare"
+##   .. ..$ showSendToCloud    : logi FALSE
+##   ..$ source     : chr "A"
+##   ..$ attrs      :List of 1
+##   .. ..$ 54a4199e2366:List of 3
+##   .. .. ..$ x   :Class 'formula'  language ~~reorder(Canton, -Population)
+##   .. .. .. .. ..- attr(*, ".Environment")=&lt;environment: 0x00000255fcd065f8&gt; 
+##   .. .. ..$ y   :Class 'formula'  language ~~Population
+##   .. .. .. .. ..- attr(*, ".Environment")=&lt;environment: 0x00000255fcd065f8&gt; 
+##   .. .. ..$ type: chr "bar"
+##   .. .. ..- attr(*, "class")= chr "plotly_eval"
+##   ..$ cur_data   : chr "54a4199e2366"
+##   ..$ visdat     :List of 1
+##   .. ..$ 54a4199e2366:function (y)  
+##   ..$ highlight  :List of 7
+##   .. ..$ on        : chr "plotly_click"
+##   .. ..$ persistent: logi FALSE
+##   .. ..$ dynamic   : logi FALSE
+##   .. ..$ selectize : logi FALSE
+##   .. ..$ opacityDim: num 0.2
+##   .. ..$ selected  :List of 1
+##   .. .. ..$ opacity: num 1
+##   .. ..$ debounce  : num 0
+##   ..$ shinyEvents: chr [1:11] "plotly_hover" "plotly_click" "plotly_selected" "plotly_relayout" ...
+##   ..$ base_url   : chr "https://plot.ly"
+##   ..- attr(*, "TOJSON_FUNC")=function (x, ...)  
+##  $ width        : NULL
+##  $ height       : NULL
+##  $ sizingPolicy :List of 7
+##   ..$ defaultWidth : chr "100%"
+##   ..$ defaultHeight: num 400
+##   ..$ padding      : num 0
+##   ..$ fill         : NULL
+##   ..$ viewer       :List of 6
+##   .. ..$ defaultWidth : NULL
+##   .. ..$ defaultHeight: NULL
+##   .. ..$ padding      : NULL
+##   .. ..$ fill         : logi TRUE
+##   .. ..$ suppress     : logi FALSE
+##   .. ..$ paneHeight   : NULL
+##   ..$ browser      :List of 5
+##   .. ..$ defaultWidth : NULL
+##   .. ..$ defaultHeight: NULL
+##   .. ..$ padding      : NULL
+##   .. ..$ fill         : logi TRUE
+##   .. ..$ external     : logi FALSE
+##   ..$ knitr        :List of 3
+##   .. ..$ defaultWidth : NULL
+##   .. ..$ defaultHeight: NULL
+##   .. ..$ figure       : logi TRUE
+##  $ dependencies :List of 5
+##   ..$ :List of 10
+##   .. ..$ name      : chr "typedarray"
+##   .. ..$ version   : chr "0.1"
+##   .. ..$ src       :List of 1
+##   .. .. ..$ file: chr "htmlwidgets/lib/typedarray"
+##   .. ..$ meta      : NULL
+##   .. ..$ script    : chr "typedarray.min.js"
+##   .. ..$ stylesheet: NULL
+##   .. ..$ head      : NULL
+##   .. ..$ attachment: NULL
+##   .. ..$ package   : chr "plotly"
+##   .. ..$ all_files : logi FALSE
+##   .. ..- attr(*, "class")= chr "html_dependency"
+##   ..$ :List of 10
+##   .. ..$ name      : chr "jquery"
+##   .. ..$ version   : chr "3.5.1"
+##   .. ..$ src       :List of 1
+##   .. .. ..$ file: chr "lib/jquery"
+##   .. ..$ meta      : NULL
+##   .. ..$ script    : chr "jquery.min.js"
+##   .. ..$ stylesheet: NULL
+##   .. ..$ head      : NULL
+##   .. ..$ attachment: NULL
+##   .. ..$ package   : chr "crosstalk"
+##   .. ..$ all_files : logi TRUE
+##   .. ..- attr(*, "class")= chr "html_dependency"
+##   ..$ :List of 10
+##   .. ..$ name      : chr "crosstalk"
+##   .. ..$ version   : chr "1.2.0"
+##   .. ..$ src       :List of 1
+##   .. .. ..$ file: chr "www"
+##   .. ..$ meta      : NULL
+##   .. ..$ script    : chr "js/crosstalk.min.js"
+##   .. ..$ stylesheet: chr "css/crosstalk.min.css"
+##   .. ..$ head      : NULL
+##   .. ..$ attachment: NULL
+##   .. ..$ package   : chr "crosstalk"
+##   .. ..$ all_files : logi TRUE
+##   .. ..- attr(*, "class")= chr "html_dependency"
+##   ..$ :List of 10
+##   .. ..$ name      : chr "plotly-htmlwidgets-css"
+##   .. ..$ version   : chr "2.11.1"
+##   .. ..$ src       :List of 1
+##   .. .. ..$ file: chr "htmlwidgets/lib/plotlyjs"
+##   .. ..$ meta      : NULL
+##   .. ..$ script    : NULL
+##   .. ..$ stylesheet: chr "plotly-htmlwidgets.css"
+##   .. ..$ head      : NULL
+##   .. ..$ attachment: NULL
+##   .. ..$ package   : chr "plotly"
+##   .. ..$ all_files : logi FALSE
+##   .. ..- attr(*, "class")= chr "html_dependency"
+##   ..$ :List of 10
+##   .. ..$ name      : chr "plotly-main"
+##   .. ..$ version   : chr "2.11.1"
+##   .. ..$ src       :List of 1
+##   .. .. ..$ file: chr "htmlwidgets/lib/plotlyjs"
+##   .. ..$ meta      : NULL
+##   .. ..$ script    : chr "plotly-latest.min.js"
+##   .. ..$ stylesheet: NULL
+##   .. ..$ head      : NULL
+##   .. ..$ attachment: NULL
+##   .. ..$ package   : chr "plotly"
+##   .. ..$ all_files : logi FALSE
+##   .. ..- attr(*, "class")= chr "html_dependency"
+##  $ elementId    : NULL
+##  $ preRenderHook:function (p, registerFrames = TRUE)  
+##  $ jsHooks      : list()
+##  - attr(*, "class")= chr [1:2] "plotly" "htmlwidget"
+##  - attr(*, "package")= chr "plotly"
+```
+]
+]
+
+???
+- So how do we come from those charts being made in R to the web charts?
+
+- First, we store the Plotly plot as a JSON file, for that we have written a little function
+
+- This is how the plotly figure looks in R, it's basically a list. You can also see that there is much more in that list than I specified when making the plot because Plotly uses default values whenever the user didn't make a specification.
+
+- Then we upload the JSON file to a server that we can access from our content management system.
+
+---
+# .center[Rendering the JSON File]
+.panelset[
+.panel[
+.panel-name[HTML]
+
+
+```js
+*&lt;div id='chart44'&gt;&lt;/div&gt;
+
+&lt;script&gt;
+require.config({
+	baseUrl: '/behoerden/gesundheitsdirektion/statistikfachstelle/daten/js/'
+});
+
+require(['makeplotlyzg'], function (makeplotlyzg) {
+*makeplotlyzg.load({
+*	number:44,
+*	json_path:"/behoerden/gesundheitsdirektion/statistikfachstelle/daten/themen/themen-08-00-02.json",
+*   downloadurl:"/behoerden/gesundheitsdirektion/statistikfachstelle/daten/themen/themen-08-00-02.xlsx"
+	});
+})
+
+
+&lt;/script&gt;
+```
+
+]
+.panel[
+.panel-name[Essential Javascript]
+
+```js
+//define Javascript libraries
+require.config({
+	baseUrl: '/behoerden/gesundheitsdirektion/statistikfachstelle/daten/js/',
+	paths: {
+		"libs": "libraries/",
+		"d3v7":"libraries/d3v7/d3",
+		"plotly":"libraries/plotly",
+		"locale": "libraries/plotly-locale-de-ch"}});
+
+//load libraries on demand
+define(['plotly','d3v7','locale'], function(URI,plotly,d3v7,locale,html2canvas){
+return{load: function(args) {
+        var number = (typeof args.number == 'undefined') ? 1 : args.number;
+        var json_path = (typeof args.json_path == 'undefined') ? "error" : args.json_path;
+        var downloadurl = (typeof args.downloadurl == 'undefined') ? "error" : args.downloadurl;
+//use data and then plot        
+var daten = d3v7.json(json_path + '?' + Math.floor(Math.random() * 1000)).then(function(data){
+ plotly.newPlot('chart'+number, data.x.data,data.x.layout,config);
+});
+
+}
+};
+});
+```
+]
+
+
+.panel[
+.panel-name[Javascript]
+
+```js
+require.config({
+	baseUrl: '/behoerden/gesundheitsdirektion/statistikfachstelle/daten/js/',
+	paths: {
+		"libs": "libraries/",
+        "urijs":"libraries/URI",
+		"d3v7":"libraries/d3v7/d3",
+		"plotly":"libraries/plotly",
+        "html2canvas":"libraries/html2canvas",
+		"locale": "libraries/plotly-locale-de-ch"
+    }
+});
+
+
+var stylesheets = "/behoerden/gesundheitsdirektion/statistikfachstelle/daten/css/statistik.css"
+var $head = $("head");
+$head.append("&lt;link rel=\"stylesheet\" type=\"text/css\" href=\"" + stylesheets + "\"&gt;");
+$('body').css('background-color','transparent');
+//makecontainers funktion erstellt innerhalb eines div's auf der webseite welches dem muster chart + Nummer X folgt, weitere div's in welche Metadaten und der Chart abgefüllt wird
+    function makecontainers(number) {
+    if($("#chart" + number + " &gt; div.title" + number).length === 0){
+        $("#chart" + number).prepend( "&lt;div id='title" + number + "' class='title'&gt;&lt;/div&gt;" );
+    }
+    if($("#chart" + number + " &gt; div.subtitle" + number).length === 0){
+        $("#chart" + number + " &gt; div.title").after( "&lt;div id='subtitle" + number + "' class='subtitle'&gt;&lt;/div&gt;" );
+    } 
+    if($("#chart" + number + " &gt; div.explanation" + number).length === 0){
+        $("#chart" + number + " &gt; div.subtitle").after( "&lt;div id='explanation" + number + "' class='explanation style='display: none; font-size: 12px;'&gt;&lt;/div&gt;" );
+    }
+    if($("#chart" + number + " &gt; div.chartarea" + number).length === 0){
+        $("#chart" + number + " &gt; div.explanation").after("&lt;div id='chartarea" + number + "' class='chartarea'&gt;&lt;/div&gt;" )
+    }
+    if($("#chart" + number + " &gt; div.source" + number).length === 0){
+        $("#chart" + number + " &gt; div.chartarea").after("&lt;div id='source" + number + "' class='source'&gt;&lt;/div&gt;" )
+    }
+}
+//funktion testet ob ein file heruntergeladen werden kann
+function canDownloadFile(url, callback)
+{
+  var http = new XMLHttpRequest();
+  http.open('HEAD', url);
+  http.onreadystatechange = function() {
+    if (http.readyState === XMLHttpRequest.DONE) {
+      callback(http.status);
+    }
+  };
+
+  http.send();
+}
+
+//function um canvas in bild zuv erwnalden: https://github.com/SuperAL/canvas2image/blob/master/canvas2image.js
+
+define(['urijs/URI','plotly','d3v7','locale','html2canvas'], function(URI,plotly,d3v7,locale,html2canvas){
+return{
+    load: function(args) {
+        var number = (typeof args.number == 'undefined') ? 1 : args.number;
+        var json_path = (typeof args.json_path == 'undefined') ? "error" : args.json_path;
+        var downloadurl = (typeof args.downloadurl == 'undefined') ? "error" : args.downloadurl;
+        //container erweitern für meta und plot div
+        makecontainers(number);
+
+//function lädt file herunter falls can Download file funktion korrekt, ansonsten dialogbox
+        var canDownloadCallback = function (statusCode) {
+            if (statusCode === 200) {
+              window.open(downloadurl,'_parent');
+            } else {
+              $("&lt;div&gt;Entschuldigen Sie bitte die Unannehmlichkeit, für diese Graphik existiert leider noch keine Excel-Datei. Sie können uns per E-Mail darüber informieren, wenn Sie auf 'Email' klicken. Andernfalls klicken Sie bitte auf Abbrechen und kommen damit zurück zur Webseite.&lt;/div&gt;").dialog({
+                  title: "Fehler: keine Excel-Datei vorhanden",
+                  autoOpen: true,
+                  width: 600,
+                  buttons: {
+                      "Email": function emailForm(){
+                      var email = "info@statistik.com";
+                      var mailto_link = 'mailto:'+email;
+                      window.location.href =mailto_link;
+                      },
+          
+                      "Abbrechen": function() {
+                          $(this).dialog("close");
+                      }
+                  }
+              });
+            }
+          }
+//Funktion um uri zu verändern
+          if (typeof uri == 'undefined') { uri= new URI(window.location.href)};
+
+        //konfiguration plotly
+        //excel button für plotly modebar definieren
+var excelsvg={'width': 500,'height': 600,'path': 'M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM155.7 250.2L192 302.1l36.3-51.9c7.6-10.9 22.6-13.5 33.4-5.9s13.5 22.6 5.9 33.4L221.3 344l46.4 66.2c7.6 10.9 5 25.8-5.9 33.4s-25.8 5-33.4-5.9L192 385.8l-36.3 51.9c-7.6 10.9-22.6 13.5-33.4 5.9s-13.5-22.6-5.9-33.4L162.7 344l-46.4-66.2c-7.6-10.9-5-25.8 5.9-33.4s25.8-5 33.4 5.9z'};
+// info button für plotly modebar definieren
+var infosvg = {'width':500,'height':600,'path':'M256 512c141.4 0 256-114.6 256-256S397.4 0 256 0S0 114.6 0 256S114.6 512 256 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-144c-17.7 0-32-14.3-32-32s14.3-32 32-32s32 14.3 32 32s-14.3 32-32 32z'};
+//kamera button für modebar defiunieren
+var photosvg = {'width':500,'height':600,'path': 'M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z'};
+
+//plotly configuration definieren: beim excel download müssen wir noch einen catch error falls ressource nicht gefunden wird einbauen, das jetzige funktioniert nicht
+var config = {
+modeBarButtonsToAdd: [{name: 'Excel Datei Herunterladen',
+icon: excelsvg,
+click: function(){ 
+    canDownloadFile(downloadurl, canDownloadCallback);
+}},
+{name: 'Information',
+title: 'Klicken Sie für Informationen, wie mit der Graphik interagiert werden kann',
+icon: infosvg,
+click: function() { 
+    if ($(".explanation" ).is(":visible")==true){$(".explanation").hide();} else if ($(".explanation" ).is(":hidden")==true){$(".explanation").show();}}
+},
+{name:'Graphik herunterladen',
+icon: photosvg,
+click: function(){
+    var captureElement = $("#chart"+number)[0] // Select the element you want to capture. Select the &lt;body&gt; element to capture full page.
+    //document.body.style.cursor = 'wait';
+    //document.style.cursor = "wait";
+    //setTimeout('document.body.style.cursor = "default"', 1500);
+
+//wait animation:
+$("body").css("cursor", "wait");
+d3v7.select('.cursor-crosshair').style('cursor', 'wait');
+d3v7.select('.cursor-pointer').style('cursor', 'wait')
+
+    html2canvas(captureElement,{
+        ignoreElements: function(element){//test ob modebar hide auch dazu führt das html2canvas das popup ignoriert was aus modebar heruas kommt (source: https://stackoverflow.com/questions/20590104/how-to-remove-certain-elements-before-taking-screenshot)
+                if(element.classList.contains('modebar')){
+                    return true;
+                }
+        }
+    })
+        .then(canvas =&gt; {
+          
+            canvas.style.display = 'none'
+            document.body.appendChild(canvas)
+            return canvas
+        })
+        .then(canvas =&gt; {
+            var image = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream')
+            var a = document.createElement('a')
+            a.setAttribute('download', 'my-image.png')
+            a.setAttribute('href', image)
+            a.click()
+            canvas.remove()
+            $("body").css("cursor", "default");
+            d3v7.select('.cursor-crosshair').style('cursor', 'default');
+d3v7.select('.cursor-pointer').style('cursor', 'default')
+            //d3v7.selectAll('g.draglayer').style('cursor', 'default');
+            //$("div").css('cursor','default');
+          
+        })
+}
+
+}
+],
+displayModeBar: true,
+displaylogo: false,
+responsive : true,
+ locale: "dech",
+modeBarButtonsToRemove: ["hoverclosest","hovercompare","zoom2d","lasso2d","pan2d","select2d","zoomIn2d","zoomOut2d","autoScale2d","resetScale2d","toImage","resetSankeyGroup"]
+};
+
+        //Daten einlesen
+
+			var daten = d3v7.json(json_path + '?' + Math.floor(Math.random() * 1000)).then(function(data){
+
+                //populate containers with meta information
+                $("#title"+number).html(data.anno.title);
+                $("#subtitle"+number).html(data.anno.subtitle);
+                let erklaerung = '&lt;p &gt;Mit einem einfachen Klick auf einen Legendeneintrag in der Graphik können Sie die jeweilige Datenreihe ein- oder ausblenden. Per Doppelklick auf einen Legendeneintrag werden alle anderen Datenreihen ein- oder ausblendet.&lt;/p&gt;' ;
+                $("#explanation" + number).append(erklaerung);
+                $(".explanation").hide();
+                $("#source" +  number).html(data.anno.source);
+
+                if(data.anno.description.length &gt;0){
+                    if($("#chart" + number + " &gt; div.description" + number).length === 0){
+                        $("#chart" + number + " &gt; div.chartarea").after("&lt;div id='description" + number + "' class='description'&gt;&lt;/div&gt;" );
+                        $("#description" + number).html(data.anno.description);
+                    }
+                }
+//plotly locale registrieren, ist ggf. überflüssig?
+//"undefined" == typeof Plotly ? (window.PlotlyLocales = window.PlotlyLocales || [], window.PlotlyLocales.push(locale)) : Plotly.register(locale);
+
+                plotly.newPlot('chartarea'+number, data.x.data,data.x.layout,config);
+                d3v7.select('.cursor-crosshair').style('cursor', 'default');
+                d3v7.select('.cursor-ns-resize').style('cursor', 'default');
+                d3v7.select('.cursor-pointer').style('cursor', 'default');
+                //d3v7.selectAll('g.draglayer').style('cursor', 'default');
+                //d3v7.selectAll('g.draglayer').style('cursor', 'default');
+
+            });
+
+}
+};
+});
+
+```
+]
+
+]
+
+???
+1. Panel: then we specify an html container in our content management system, and let javascript render the specified chart in it.
+
+2. Panel:  the essential Javascript is boiled down to this: we need to specify the libraries we need, load them on demand, load the data specified in the HTML-container we have seen before and plot it in that container.  
+
+3. Panel: This is the full Javascript code where we have also customised and stanrddised quite some things. We could have done this in R as well, but if you use other Javascript libraries, for example for makng a screenshot of the chart, it is easier to make that work in Javascript itself.
+
+---
+# .center[Advanced customisation]
+
+.panelset[
+.panel[
+.panel-name[Meta]
+
+```r
+plotly_meta &lt;- function(p,
+                        title=titel,
+                        subtitle=untertitel,
+                        source=quelle,
+                        description=beschreibung,
+                        chart=chartnumber) {
+  #adding annotations
+  anno &lt;- list("anno"=list("title" = {{title}},
+               "subtitle"={{subtitle}},
+               "description"={{description}},
+               "source"=paste0("Quelle: ",{{source}})
+  )
+  )
+  p &lt;- c(p,anno)
+}
+```
+]
+.panel[
+.panel-name[Standard Layout]
+
+```r
+plotly_zg &lt;-
+  function(chart,
+           legend = TRUE,
+           legendposition = "horizontal",
+           xaxistitle = "",
+           yaxistitle = "",
+           legendtitle = "",
+           description = FALSE,
+           secondyaxis = FALSE,
+           secondyaxistitle = "") {
+    if (legendposition == "horizontal") {
+      legend.position &lt;- "h"
+      x.anchor.position = "left"
+    } else if (legendposition == "vertical") {
+      legend.position == "v"
+      x.anchor.position = "auto"
+    } else{
+      print("Legend position not yet defined.")
+    }
+    if (secondyaxis == TRUE) {
+      second.yaxis.title = secondyaxistitle
+    }
+    if (legend == TRUE &amp;&amp; legend.position == "horizontal") {
+      legendbelowplot = TRUE
+    } else{
+      legendbelowplot = FALSE
+    }
+    if (nchar(xaxistitle) == 0 &amp;&amp;
+        description == FALSE &amp;&amp; legendbelowplot == FALSE) {
+      margin.space = list(t = 40,
+                          b = 50,
+                          l = 10,
+                          r = 10)
+    } else{
+      margin.space = list(t = 40,
+                          b = 75,
+                          l = 10,
+                          r = 10)
+    }
+    
+    plotly::layout(
+      p = chart,
+      hoverlabel = list(align = "left"),
+      #hoverlabel left aligned
+      separators = ".'",
+      #zahlenformatierung
+      paper_bgcolor = "rgba(252,252,252,1)",
+      #background color stimmt noch nicht, wird hier für outside plot area gestetzt
+      plot_bgcolor = "rgba(252,252,252,1)",
+      #color für plot area
+      dragmode = FALSE,
+      #stellt aus das plot zoombar ist, was auf mobile device ein problem ist da mn dann nicht mehr scrollen kann und im plot festsitzt
+      font = list(family = "Arial", size = 12),
+      #schrift und grösse für plot
+      legend = list(
+        bgcolor = "rgba(252,252,252,1)",
+        #legenden hintergrund
+        text = legendtitle,
+        #title der legende, kommt per default aus "titel" objekt inR, andernfalls im befehl manuell spezifizieren
+        orientation = legend.position,
+        #horizontale ausrichtung
+        xanchor = x.anchor.position,
+        #legende wird linksbündig geankert
+        font = list(family = "Arial", size = 12),
+        #legendenschrift
+        title = list(font = list(family = "Arial", size = 12))#muss nochmal fpr titel der legende gemacht werden da diese sonst standardmössig 10% grösser ist als legenden items
+      ),
+      margin = margin.space,
+      #margin der outside plot area vor allem unterhalb erhöht, damit legendensetzung horizontal genug platz um nicht x achsen werte zu überlappen
+      xaxis = list(
+        title = xaxistitle,
+        #title der x achse sofern gesetzt
+        showgrid = FALSE,
+        #wir wollen keine vertical gridlines
+        linecolor = "black",
+        #schwarze axenlinien
+        ticklen = 7.5,
+        #length of ticks
+        fixedrange = TRUE
+      ),
+      #fixedrange nötig weil sonst problem auf mobile mit ungewollter plotvergrösserung
+      if (secondyaxis == TRUE)
+        yaxis2 = list(
+          overlaying = "y",
+          side = "right",
+          title = second.yaxis.title,
+          fixedrange = TRUE,
+          rangemode = "tozero"
+        ),
+      yaxis = list(
+        title = yaxistitle,
+        #titel der yachse sofern gewünscht
+        if (secondyaxis == TRUE)
+          rangemode = "tozero",
+        linecolor = "black",
+        #schwarze axenlinien
+        ticklen = 7.5,
+        #length of ticks
+        fixedrange = TRUE
+      )#siehe xaxisttile kommentar
+    ) %&gt;%
+      plotly::plotly_build()
+  }
+```
+]
+.panel[
+.panel-name[Modebar]
+
+```js
+// konfiguration plotly buttons:
+// excel button für plotly modebar definieren
+var excelsvg = {
+  'width':500, 'height':600, 'path':'M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM155.7 250.2L192 302.1l36.3-51.9c7.6-10.9 22.6-13.5 33.4-5.9s13.5 22.6 5.9 33.4L221.3 344l46.4 66.2c7.6 10.9 5 25.8-5.9 33.4s-25.8 5-33.4-5.9L192 385.8l-36.3 51.9c-7.6 10.9-22.6 13.5-33.4 5.9s-13.5-22.6-5.9-33.4L162.7 344l-46.4-66.2c-7.6-10.9-5-25.8 5.9-33.4s25.8-5 33.4 5.9z'
+}
+
+// info button für plotly modebar definieren
+var infosvg = {
+  'width':500, 'height':600, 'path':'M256 512c141.4 0 256-114.6 256-256S397.4 0 256 0S0 114.6 0 256S114.6 512 256 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-144c-17.7 0-32-14.3-32-32s14.3-32 32-32s32 14.3 32 32s-14.3 32-32 32z'
+}
+
+// kamera button für modebar defiunieren
+var photosvg = {
+  'width':500, 'height':600, 'path':'M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z'
+}
+
+
+// plotly configuration definieren:
+var config = {
+  modeBarButtonsToAdd:[{
+    name:'Excel Datei Herunterladen',
+    icon:excelsvg,
+    click:function() {
+      canDownloadFile(downloadurl, canDownloadCallback)
+      
+    }
+  },
+  {
+    name:'Information',
+    title:'Klicken Sie für Informationen, wie mit der Graphik interagiert werden kann',
+    icon:infosvg,
+    click:function() {
+      if ($(".explanation").is(":visible") == true) {
+        $(".explanation").hide()
+      } else if ($(".explanation").is(":hidden") == true) {
+        $(".explanation").show()
+      }
+    }
+  },
+  {
+    name:'Graphik herunterladen',
+    icon:photosvg,
+    click:function() {
+      var captureElement =$("#chart"+number)[0] /  / Select the element you want to capture. Select the &lt;
+        body &gt; element to capture full page.$("body").css("cursor", "wait")
+      
+      d3v7.select('.cursor-crosshair').style('cursor', 'wait')
+      
+      d3v7.select('.cursor-pointer').style('cursor', 'wait')
+      html2canvas(captureElement, {
+        ignoreElements:function(element) {
+          /  / test ob modebar hide auch dazu führt das html2canvas das popup ignoriert was aus modebar heruas kommt (
+            source:https: /  / stackoverflow.com / questions / 20590104 / how - to -
+              remove - certain - elements - before - taking - screenshot
+          )
+          if (element.classList.contains('modebar')) {
+            return true
+            
+          }
+        }
+      })
+      .then(canvas =&gt; {
+        canvas.style.display = 'none'
+        document.body.appendChild(canvas)
+        return canvas
+      })
+      .then(
+        canvas =&gt; {
+          var image = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream')
+          var a = document.createElement('a')
+          a.setAttribute('download', 'my-image.png')
+          a.setAttribute('href', image)
+          a.click()
+          canvas.remove()$("body").css("cursor", "default")
+          
+          d3v7.select('.cursor-crosshair').style('cursor', 'default')
+          
+          d3v7.select('.cursor-pointer').style('cursor', 'default')
+        }
+        }
+    ],
+  displayModeBar:true,
+  displaylogo:false,
+  responsive:true,
+  locale:"dech",
+  modeBarButtonsToRemove:["hoverclosest", "hovercompare", "zoom2d", "lasso2d", "pan2d", "select2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d", "toImage", "resetSankeyGroup"]
+  }
+  
+```
+]
+
+]
+
+???
+1. Panel: Now we have some advanced cusotmisations that allow us to produce our charts more parsimoniuously
+- first, we attach some meta data to each plot, and the Full Javascript you have seen before specifies us separate html containers for the title, subtitle, source and description of a chart.
+
+2. Panel:
+-Second we have a standard layout that we have customised in R. We basically lay this over each chart to customise the appearance. That makes the R-code you have seen in the examples before superfluous where I had to specify layout options in the plotly call.
+
+3. Panel:
+-finally this is how we have configured the modebar above the chart. This is what you have seen at the beginning on our webpage where we could download the excel or a screenshot from the chart, or had the info button 
+---
+# .center[Summary]
+.pull-left[
+## .center[Pro]
+- Production of interactive web charts in R
+]
+
+???
+- I will end with a short pro and contra list
+--
+
+.pull-right[
+## .center[Con]
+- Plotly has 'buggy' features requiring workarounds
+]
+
+???
+-work arounds required for advanced customisation
+-for example the mouse selection of a specific area in a chart doesn't work well on mobile phones
+
+--
+
+.pull-left[
+- Open soure, steep learning curve
+]
+
+--
+
+.pull-right[
+- Documentation could be improved
+]
+
+--
+
+.pull-left[
+- Quick output, benefits for other publications
+]
+
+--
+
+.pull-right[
+- Not superior to D3 or highcharts
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="libs/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "googlecode",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"navigation": {
+"scroll": false
+}
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
